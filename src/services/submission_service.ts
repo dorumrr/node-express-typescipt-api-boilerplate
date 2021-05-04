@@ -1,6 +1,6 @@
 import * as submissionDao from '../db/submission_dao';
+import * as institutionDao from '../db/institution_dao';
 import { ISubmission } from '../interfaces/submission';
-import { ISubmissionSubject } from '../interfaces/submission';
 
 export const createSubmission = async (data: ISubmission): Promise<any> => {
 	try {
@@ -31,12 +31,22 @@ export const deleteSubmission = async (id: string): Promise<any> => {
 };
 
 export const getSubmission = async (query: any): Promise<any> => {
+
+	let result: any;
 	try {	
-		return submissionDao.getSubmission(query);
+		const submissionsP = submissionDao.getSubmission(query);
+		const institutionsP = institutionDao.getInstitution();
+		result = await Promise.all([submissionsP, institutionsP]);
 	} catch (err) {
 		console.error(err);
 		throw Error('Something went wrong');
 	}
+
+	const submissions = result[0].map((x: any) => ({
+		...x._doc,
+		institution_details: result[1].find((o: any) => o.id === x.institution_id)
+	}));
+	return submissions;
 };
 
 export const getSubmissionByObjectId = async (_id: string): Promise<any> => {
